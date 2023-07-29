@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, AbstractBaseUser
 
-
 class Role(models.Model):  # first step from the flowchart
     STUDENT = 1
     FACULTY = 2

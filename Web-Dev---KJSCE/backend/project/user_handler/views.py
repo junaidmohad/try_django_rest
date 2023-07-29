@@ -4,11 +4,14 @@ from rest_framework import serializers
 from rest_framework import viewsets
 from rest_framework.response import Response
 from . import serializers
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 # Create your views here.
 
 
 class facultyViewSet(viewsets.ModelViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = models.Faculty.objects.all()
     serializer_class = serializers.Faculty_serializer
 
@@ -19,6 +22,8 @@ class facultyViewSet(viewsets.ModelViewSet):
 
 
 class staffViewSet(viewsets.ModelViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = models.Staff.objects.all()
     serializer_class = serializers.Staff_serializer
 
@@ -29,6 +34,8 @@ class staffViewSet(viewsets.ModelViewSet):
 
 
 class studentViewSet(viewsets.ModelViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = models.Student.objects.all()
     serializer_class = serializers.Student_serializer
 
