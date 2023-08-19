@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     "excel_impex",
 ]
 
-AUTH_USER_MODEL = "user_handler.CustomUser"
+AUTH_USER_MODEL = "user_handler.CustomUser"         #overrides the default user model
 # where user is the app name and User is the model class name
 
 MIDDLEWARE = [

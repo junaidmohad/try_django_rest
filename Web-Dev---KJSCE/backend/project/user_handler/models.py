@@ -26,29 +26,32 @@ class Role(models.Model):  # first step from the flowchart
 
 # Custom user manager
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if (
-            not email
-        ):  # this if statement makes sure that if email is not provided it will raise an error
-            raise ValueError("The Email field must be set")
-        email = self.normalize_email(
-            email
-        )  # the function normalize_email() is to make all the characters in the email into lowercase, and its only available in the BaseUserManager class
-
+    def create_user(self, email, username, password=None):
+        if not email: 
+            raise ValueError("Users must have an email address")
+        if not username:
+            raise ValueError("Users must have a username")
+        
         user = self.model(
-            email=email, **extra_fields
-        )  # user variable to create a new user and save, these functions are provided by the BaseUserManager
+            email = self.normalize_email(email),
+            username = username,            
+            )
+        
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_admin", True)
-        extra_fields.setdefault(
-            "is_staff", True
-        )  # the extrafields mentioned here are the built-in flags and here they are just setting the boolean field to true
-        extra_fields.setdefault("is_superuser", True)
-        return self.create_user(email, password, **extra_fields)
+    def create_superuser(self, email, username, password):
+        user = self.create_user(
+            email = self.normalize_email(email),
+            password = password,
+            username = username,
+        )
+        user.is_admin = True
+        user.is_staff = True
+        user.is_superuser = True
+        user.save(using=self._db)
+        return user
 
 
 # Custom user model
@@ -58,21 +61,25 @@ class CustomUser(AbstractBaseUser):
     )  # the last thing of the first step from the flowchart
 
     # Use the custom user manager
-    objects = CustomUserManager()
-    # Set the email field as the username field for authentication
+    
+   
 
-    email = models.EmailField(unique=True)  # email is taken as the user authentication detail
+    email = models.EmailField(verbose_name='email', unique=True)
+    username = models.CharField(max_length=30, unique=True)
     date_joined = models.DateTimeField(verbose_name='date joined', auto_now_add=True)
     last_login = models.DateTimeField(verbose_name='last login', auto_now=True)
 
     #for authentication and permissions
     is_admin = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    # Use the custom user manager
+    objects = CustomUserManager()
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    USERNAME_FIELD = "email"                    #these are the important fields in order to create users
+    REQUIRED_FIELDS = ["username"]
 
     
 
@@ -184,6 +191,15 @@ class Student(models.Model):
         verbose_name = "Student"
         verbose_name_plural = "Students"
 
+class Proctor(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, to_field="email")
+
+    def __str__(self):
+        return str(self.course_code)
+    
+    class Meta:
+        verbose_name = "Proctor"
+        verbose_name_plural = "Proctors"
 
 class Course(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, to_field="branch_name")

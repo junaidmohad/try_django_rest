@@ -1,4 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate, logout
+# from django.forms import 
+
 from . import models
 from rest_framework import serializers
 from rest_framework import viewsets
@@ -43,3 +46,9 @@ class studentViewSet(viewsets.ModelViewSet):
         student = models.Student.objects.all()
         serializer = serializers.Student_serializer(student, data=request.data)
         return Response(serializer.data)
+
+
+#view funciton for logging out a user
+def logout_view(request):
+    logout(request)
+    return redirect('home')
