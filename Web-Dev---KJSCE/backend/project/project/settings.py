@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
 
 # Application definition
 
@@ -40,12 +45,13 @@ INSTALLED_APPS = [
     "rest_framework",
     "user_handler",
     "excel_impex",
+    "corsheaders",
 ]
 
-AUTH_USER_MODEL = "user_handler.CustomUser"         #overrides the default user model
-# where user is the app name and User is the model class name
+
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -75,13 +81,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "project.wsgi.application"
 
+AUTH_USER_MODEL = "user_handler.CustomUser"         #overrides the default user model
+# where user is the app name and User is the model class name
+
 REST_FRAMEWORK = {
-    
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
-    
+        'rest_framework.authentication.SessionAuthentication',
+    ),
 }
 
 # Database

@@ -9,13 +9,65 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from . import serializers
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
+
 # Create your views here.
+
+from django.contrib.auth import get_user_model, login, logout
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .serializers import UserRegisterSerializer, UserLoginSerializer, UserSerializer
+from rest_framework import permissions, status
+from .validations import custom_validation, validate_email, validate_password
+
+
+class UserRegister(APIView):
+	permission_classes = (permissions.AllowAny,)
+	def post(self, request):
+		clean_data = custom_validation(request.data)
+		serializer = UserRegisterSerializer(data=clean_data)
+		if serializer.is_valid(raise_exception=True):
+			user = serializer.create(clean_data)
+			if user:
+				return Response(serializer.data, status=status.HTTP_201_CREATED)
+		return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserLogin(APIView):
+	permission_classes = (permissions.AllowAny,)
+	authentication_classes = (SessionAuthentication,)
+	##
+	def post(self, request):
+		data = request.data
+		assert validate_email(data)
+		assert validate_password(data)
+		serializer = UserLoginSerializer(data=data)
+		if serializer.is_valid(raise_exception=True):
+			user = serializer.check_user(data)
+			login(request, user)
+			return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserLogout(APIView):
+	permission_classes = (permissions.AllowAny,)
+	authentication_classes = ()
+	def post(self, request):
+		logout(request)
+		return Response(status=status.HTTP_200_OK)
+
+
+class UserView(APIView):
+	permission_classes = (permissions.IsAuthenticated,)
+	authentication_classes = (SessionAuthentication,)
+	##
+	def get(self, request):
+		serializer = UserSerializer(request.user)
+		return Response({'user': serializer.data}, status=status.HTTP_200_OK)
 
 
 class facultyViewSet(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
     queryset = models.Faculty.objects.all()
     serializer_class = serializers.Faculty_serializer
 
@@ -26,8 +78,8 @@ class facultyViewSet(viewsets.ModelViewSet):
 
 
 class staffViewSet(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
     queryset = models.Staff.objects.all()
     serializer_class = serializers.Staff_serializer
 
@@ -38,8 +90,8 @@ class staffViewSet(viewsets.ModelViewSet):
 
 
 class studentViewSet(viewsets.ModelViewSet):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = (permissions.IsAuthenticated,)
+    authentication_classes = (SessionAuthentication,)
     queryset = models.Student.objects.all()
     serializer_class = serializers.Student_serializer
 
@@ -49,54 +101,3 @@ class studentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-#view funciton for logging out a user
-def logout_view(request):
-    logout(request)
-    return redirect('home')
-
-#this view function inflates the login form that we just created
-def login_view(request):
-    context = {}
-    user =  request.user
-    if user.is_authenticated:
-        return redirect('home')
-    
-    if request.POST:
-        form = AccountAuthenticationForm(request.POST)
-        if form.is_valid():
-            email = request.POST['email']
-            password = request.POST['password']
-            user = authenticate(email=email, password=password)
-
-            if user:
-                login(request, user)
-                return redirect('home')
-        else:
-            form = AccountAuthenticationForm()
-
-    context['login_form'] = form
-    return render(request, 'user_handler/login.html', context)              #we need to change this render function as per the frontend naming for login page
-
-
-#this view function is reponsible for updating the details of the respective user
-def account_view(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    
-    context = {}
-
-    if request.POST:
-        form = AccountUpdateForm(request.POST, instance=request.user)               #the instance used here is to look for the primary key of the user that is authenticated. this instance refernces back to the instance in the forms.py
-        if form.is_valid():
-            form.save()
-
-    else:
-        form = AccountUpdateForm(
-            initial={
-                "email": request.user.email,
-                "username": request.user.username
-            }
-        )
-
-    context['account_form'] = form
-    return render(request, 'account/account.html', context)             #we need to change this too to update page as per the project repo
